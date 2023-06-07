@@ -160,7 +160,7 @@ class Library:
         reader_found = False
         for reader in self.__readers:
             if reader.get_id() == reader_id:
-                if len(reader.get_borrowed_books()) >= reader.get_books_count():
+                if len(reader.get_borrowed_books()) >= 5 :
                     print(f" Czytelnik wypozyczyl juz maksymalna ilość ksiazek.")
                     return
                 reader_found = True
@@ -193,7 +193,7 @@ class Library:
         for reader in self.__readers:
             if reader.get_id() == reader_id:
                 reader.add_borrowed_book(title)
-                reader.decrease_books_count()
+                reader.increase_books_count()
                 break
 
         self.__save_books_to_file()
@@ -215,7 +215,7 @@ class Library:
             if reader.get_id() == reader_id:
                 if title in reader.get_borrowed_books():
                     reader.remove_borrowed_book(title)
-                    reader.increase_books_count()
+                    reader.decrease_books_count()
                 else:
                     print(f" Czytelnik nie ma wypozyczonej ksiazki o tytule {title}.")
                     return

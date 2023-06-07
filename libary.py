@@ -9,7 +9,7 @@ class SanityCheck:
         self.check_files("biblioteka.csv", "czytacze.csv", "historia.csv")
 
     @staticmethod
-    def check_files(self, *args):
+    def check_files(*args):
         try:
             with open("biblioteka.csv", "r") as books_file:
                 pass
@@ -145,7 +145,7 @@ class Library:
         tytul = unidecode(tytul)  # Usuń polskie znaki
         autor = unidecode(autor)  # Usuń polskie znaki
         if not re.match(r'^[a-zA-Z\s]+$', autor):
-            print(f" Autor moze zawierać tylko litery i spacje.")
+            print(f" Autor moze zawierac tylko litery i spacje.")
             return
         if not re.match(r'^\d+$', str(rok_wydania)):
             print(f" Rok musi być liczba.")
@@ -220,6 +220,7 @@ class Library:
                 if tytul in reader.get_borrowed_books():
                     reader.remove_borrowed_book(tytul)
                     reader.increase_books_count()
+                    print(reader.get_books_count())
                 else:
                     print(f" Czytelnik nie ma wypozyczonej ksiazki o tytule {tytul}.")
                     return
@@ -262,7 +263,7 @@ class Library:
             for book in self.__books:
                 for history in book.get_borrow_history():
                     writer.writerow([book.get_id(), history[0],
-                                     history[1], history[2] if len(history) > 2 else "Nie zwrócono jeszcze"])
+                                     history[1], history[2] if len(history) > 2 else "Nie zwrocono jeszcze"])
 
     def __save_readers_to_file(self):
         with open('czytacze.csv', 'w', newline='') as file:
@@ -277,8 +278,8 @@ class Library:
                 if book.get_borrow_history():
                     print(f"Historia wypozyczeń ksiazki {tytul}:")
                     for history in book.get_borrow_history():
-                        print(f"Czytacz ID: {history[0]}, Data wypozyczenia: {history[1]}, Data zwrócenia:"
-                              f" {history[2] if len(history) > 2 else 'Nie zwrócono jeszcze'}")
+                        print(f"Czytacz ID: {history[0]}, Data wypozyczenia: {history[1]}, Data zwrocenia:"
+                              f" {history[2] if len(history) > 2 else 'Nie zwrocono jeszcze'}")
                 else:
                     print(f"Ksiazka {tytul} nie byla jeszcze wypozyczona.")
                 self.__save_history_to_file()  # add this line to save the history to file
@@ -306,7 +307,7 @@ class Library:
                     try:
                         for book in self.__books:
                             if book.get_id() == int(id_ksiazki):
-                                if return_date == "Nie zwrócono jeszcze":
+                                if return_date == "Nie zwrocono jeszcze":
                                     book.add_to_borrow_history(int(reader_id), borrow_date)
                                 else:
                                     book.add_to_borrow_history(int(reader_id), borrow_date, return_date)
@@ -358,9 +359,9 @@ def menu():
 
         elif option == "2":
             tytul = input("Podaj tytul ksiazki do wypozyczenia: ")
-            reader_id = input("Wprowadź numer ID czytelnika: ")
+            reader_id = input("Wprowadz numer ID czytelnika: ")
             if not reader_id.isdigit():
-                print(f" ID musi być liczba.")
+                print(f" ID musi byc liczba.")
                 continue
             reader_id = int(reader_id)
             date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
@@ -377,7 +378,7 @@ def menu():
             library.return_book(tytul, reader_id, date)
 
         elif option == "4":
-            tytul = input("Podaj tytul ksiazki, której historię chcesz sprawdzić: ")
+            tytul = input("Podaj tytul ksiazki, ktorej historie chcesz sprawdzic: ")
             library.book_history(tytul)
 
         elif option == "5":

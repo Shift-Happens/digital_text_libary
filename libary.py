@@ -6,32 +6,34 @@ import re
 
 class SanityCheck:
     def __init__(self):
-        self.check_files("books.csv", "readers.csv", "history.csv")
+        self.check_files("biblioteka.csv", "czytacze.csv", "historia.csv")
 
     def check_files(self, *args):
         try:
-            with open("books.csv", "r") as books_file:
+            with open("biblioteka.csv", "r") as books_file:
                 pass
         except FileNotFoundError:
-            with open("books.csv", "w", newline="") as books_file:
+            with open("biblioteka.csv", "w", newline="") as books_file:
                 books_writer = csv.writer(books_file, delimiter=",")
-                books_writer.writerow(["id", "title", "author", "year", "status"])
+                books_writer.writerow(["ID", "Tytul", "Author", "Rok wydania", "Status"])
 
         try:
-            with open("readers.csv", "r") as readers_file:
+            with open("czytacze.csv", "r") as readers_file:
                 pass
         except FileNotFoundError:
-            with open("readers.csv", "w", newline="") as readers_file:
+            with open("czytacze.csv", "w", newline="") as readers_file:
                 readers_writer = csv.writer(readers_file, delimiter=",")
-                readers_writer.writerow(["id", "name", "surname", "books_count"])
+                readers_writer.writerow(["Numer czytacza", "Imie", "Nazwisko", "Ilosc ksiazek"])
 
         try:
-            with open("history.csv", "r") as history_file:
+            with open("historia.csv", "r") as history_file:
                 pass
         except FileNotFoundError:
-            with open("history.csv", "w", newline="") as history_file:
+            with open("historia.csv", "w", newline="") as history_file:
                 history_writer = csv.writer(history_file, delimiter=",")
-                history_writer.writerow(["date", "error"])
+                history_writer.writerow(["ID", "Numer czytacza", "Czy udana", "Data wypozyczenia", "Data oddania"])
+                # trzeba zaimplementowac te parametry do funkcji lend_book i return_book, dodac je do funkcji add_to_borrow_history w klasie Book, oraz dodac je do funkcji __load_history_from_file w klasie Library
+                # wtedy bedzie mozna zapisywac historie wypozyczen i oddan do pliku historia.csv i odczytywac z niego historie wypozyczen i oddan
 
 
 class Book:
@@ -128,7 +130,7 @@ class Library:
         return True
 
     def write_error_to_history(self, error):
-        with open("history.csv", "a", newline="") as history_file:
+        with open("historia.csv", "a", newline="") as history_file:
             history_writer = csv.writer(history_file, delimiter=",")
             history_writer.writerow([datetime.now(), error])
 
@@ -243,14 +245,14 @@ class Library:
         self.__save_readers_to_file()
 
     def __save_books_to_file(self):
-        with open('books.csv', 'w', newline='') as file:
+        with open('biblioteka.csv', 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(["ID", "Tytul", "Autor", "Rok", "Status"])
+            writer.writerow(["ID", "Tytul", "Author", "Rok wydania", "Status"])
             for book in self.__books:
                 writer.writerow([book.get_id(), book.get_title(), book.get_author(), book.get_year(), book.get_status()])
 
     def __save_history_to_file(self):
-        with open('history.csv', 'w', newline='') as file:
+        with open('historia.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["ID ksiazki", "Numer czytacza", "Data wypozyczenia", "Data oddania"])
             for book in self.__books:
@@ -258,7 +260,7 @@ class Library:
                     writer.writerow([book.get_id(), history[0], history[1], history[2] if len(history) > 2 else "Nie zwrócono jeszcze"])
 
     def __save_readers_to_file(self):
-        with open('readers.csv', 'w', newline='') as file:
+        with open('czytacze.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["Numer czytacza", "Imie", "Nazwisko", "Ilosc ksiazek"])
             for reader in self.__readers:
@@ -280,19 +282,19 @@ class Library:
 
     def __load_books_from_file(self):
         try:
-            with open('books.csv', 'r') as file:
+            with open('biblioteka.csv', 'r') as file:
                 reader = csv.reader(file)
                 next(reader)  # Pomijamy naglówek
                 for row in reader:
                     book_id, title, author, year, status = row
                     self.__books.append(Book(int(book_id), title, author, int(year), status))
         except FileNotFoundError:
-            print(f" Brak pliku books.csv. Utworzono nowa listę ksiazek.")
+            print(f" Brak pliku biblioteka.csv. Utworzono nowa listę ksiazek.")
 
 
     def __load_history_from_file(self):
         try:
-            with open('history.csv', 'r') as file:
+            with open('historia.csv', 'r') as file:
                 reader = csv.reader(file)
                 next(reader)  # Pomijamy naglówek
                 for row in reader:
@@ -308,18 +310,18 @@ class Library:
                     except ValueError:
                         print(f" W historii znaleziono nieprawidlowe ID czytelnika: {reader_id}")
         except FileNotFoundError:
-            print(f" Brak pliku history.csv. Utworzono nowa listę historii wypozyczeń.")
+            print(f" Brak pliku historia.csv. Utworzono nowa listę historii wypozyczeń.")
 
     def __load_readers_from_file(self):
         try:
-            with open('readers.csv', 'r') as file:
+            with open('czytacze.csv', 'r') as file:
                 reader = csv.reader(file)
                 next(reader)  # Pomijamy naglówek
                 for row in reader:
                     reader_id, name, surname, books_count = row
                     self.__readers.append(Reader(int(reader_id), name, surname, int(books_count)))
         except FileNotFoundError:
-            print(f" Brak pliku readers.csv. Utworzono nowa listę czytelników.")
+            print(f" Brak pliku czytacze.csv. Utworzono nowa listę czytelników.")
 
 
 def menu():

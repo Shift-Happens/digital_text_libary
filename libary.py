@@ -8,6 +8,7 @@ class SanityCheck:
     def __init__(self):
         self.check_files("biblioteka.csv", "czytacze.csv", "historia.csv")
 
+    @staticmethod
     def check_files(self, *args):
         try:
             with open("biblioteka.csv", "r") as books_file:
@@ -15,7 +16,7 @@ class SanityCheck:
         except FileNotFoundError:
             with open("biblioteka.csv", "w", newline="") as books_file:
                 books_writer = csv.writer(books_file, delimiter=",")
-                books_writer.writerow(["ID", "Tytul", "Author", "Rok wydania", "Status"])
+                books_writer.writerow(["ID", "Tytul", "autor", "Rok wydania", "Status"])
 
         try:
             with open("czytacze.csv", "r") as readers_file:
@@ -32,30 +33,32 @@ class SanityCheck:
             with open("historia.csv", "w", newline="") as history_file:
                 history_writer = csv.writer(history_file, delimiter=",")
                 history_writer.writerow(["ID", "Numer czytacza", "Czy udana", "Data wypozyczenia", "Data oddania"])
-                # trzeba zaimplementowac te parametry do funkcji lend_book i return_book, dodac je do funkcji add_to_borrow_history w klasie Book, oraz dodac je do funkcji __load_history_from_file w klasie Library
-                # wtedy bedzie mozna zapisywac historie wypozyczen i oddan do pliku historia.csv i odczytywac z niego historie wypozyczen i oddan
+            # trzeba zaimplementowac te parametry do funkcji lend_book i return_book, dodac je do funkcji
+            # add_to_borrow_history w klasie Book, oraz dodac je do funkcji __load_history_from_file w klasie Library
+            # wtedy bedzie mozna zapisywac historie wypozyczen i oddan do pliku
+            # historia.csv i odczytywac z niego historie wypozyczen i oddan przy uruchomieniu programu
 
 
 class Book:
-    def __init__(self, book_id, title, author, year, status):
-        self.__id = book_id
-        self.__title = title
-        self.__author = author
-        self.__year = int(year)
+    def __init__(self, id_ksiazki, tytul, autor, rok_wydania, status):
+        self.__id = id_ksiazki
+        self.__tytul = tytul
+        self.__autor = autor
+        self.__rok_wydania = int(rok_wydania)
         self.__status = status
         self.__borrow_history = []
 
     def get_id(self):
         return self.__id
 
-    def get_title(self):
-        return self.__title
+    def get_tytul(self):
+        return self.__tytul
 
-    def get_author(self):
-        return self.__author
+    def get_autor(self):
+        return self.__autor
 
-    def get_year(self):
-        return self.__year
+    def get_rok_wydania(self):
+        return self.__rok_wydania
 
     def get_status(self):
         return self.__status
@@ -102,11 +105,11 @@ class Reader:
     def decrease_books_count(self):
         self.__books_count -= 1
 
-    def add_borrowed_book(self, title):
-        self.__borrowed_books.append(title)
+    def add_borrowed_book(self, tytul):
+        self.__borrowed_books.append(tytul)
 
-    def remove_borrowed_book(self, title):
-        self.__borrowed_books.remove(title)
+    def remove_borrowed_book(self, tytul):
+        self.__borrowed_books.remove(tytul)
 
 
 class Library:
@@ -123,9 +126,9 @@ class Library:
                 return False
         return True
 
-    def __is_unique_book(self, title, author):
+    def __is_unique_book(self, tytul, autor):
         for book in self.__books:
-            if book.get_title() == title and book.get_author() == author:
+            if book.get_tytul() == tytul and book.get_autor() == autor:
                 return False
         return True
 
@@ -134,28 +137,28 @@ class Library:
             history_writer = csv.writer(history_file, delimiter=",")
             history_writer.writerow([datetime.now(), error])
 
-    def add_book(self, title, author, year):
-        if not self.__is_unique_book(title, author):
+    def add_book(self, tytul, autor, rok_wydania):
+        if not self.__is_unique_book(tytul, autor):
             print(f" Ksiazka juz istnieje.")
             return
-        book_id = len(self.__books) + 1
-        title = unidecode(title)  # Usuń polskie znaki
-        author = unidecode(author)  # Usuń polskie znaki
-        if not re.match(r'^[a-zA-Z\s]+$', author):
+        id_ksiazki = len(self.__books) + 1
+        tytul = unidecode(tytul)  # Usuń polskie znaki
+        autor = unidecode(autor)  # Usuń polskie znaki
+        if not re.match(r'^[a-zA-Z\s]+$', autor):
             print(f" Autor moze zawierać tylko litery i spacje.")
             return
-        if not re.match(r'^\d+$', str(year)):
+        if not re.match(r'^\d+$', str(rok_wydania)):
             print(f" Rok musi być liczba.")
             return
-        new_book = Book(book_id, title, author, year, "W bibliotece")
+        new_book = Book(id_ksiazki, tytul, autor, rok_wydania, "W bibliotece")
         self.__books.append(new_book)
         self.__save_books_to_file()
         print(f"Ksiazka dodana do biblioteki.")
 
-    def lend_book(self, title, reader_id, date):
+    def lend_book(self, tytul, reader_id, date):
         reader_id = int(reader_id)
         try:
-            datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+            datetime.strptime(date, "%d-%m-%Y %H:%M:%S")
         except ValueError:
             print(f" Data musi być w formacie YYYY-MM-DD HH:MM:SS.")
             return
@@ -179,7 +182,7 @@ class Library:
 
         book_found = False
         for book in self.__books:
-            if book.get_title() == title:
+            if book.get_tytul() == tytul:
                 if book.get_status() == "Wypozyczona":
                     print(f" Ksiazka jest juz wypozyczona.")
                     return
@@ -194,7 +197,7 @@ class Library:
 
         for reader in self.__readers:
             if reader.get_id() == reader_id:
-                reader.add_borrowed_book(title)
+                reader.add_borrowed_book(tytul)
                 reader.decrease_books_count()
                 break
 
@@ -203,9 +206,8 @@ class Library:
         self.__save_history_to_file()
         print(f" Ksiazka wypozyczona.")
 
-
-    def return_book(self, title, reader_id, date):
-        if reader_id is None or title is None:
+    def return_book(self, tytul, reader_id, date):
+        if reader_id is None or tytul is None:
             print(f" Wszystkie dane (numer, tytul) musza być podane.")
             return
         if not re.match(r'^\d+$', str(reader_id)):
@@ -215,16 +217,17 @@ class Library:
 
         for reader in self.__readers:
             if reader.get_id() == reader_id:
-                if title in reader.get_borrowed_books():
-                    reader.remove_borrowed_book(title)
+                if tytul in reader.get_borrowed_books():
+                    reader.remove_borrowed_book(tytul)
                     reader.increase_books_count()
                 else:
-                    print(f" Czytelnik nie ma wypozyczonej ksiazki o tytule {title}.")
+                    print(f" Czytelnik nie ma wypozyczonej ksiazki o tytule {tytul}.")
                     return
 
         for book in self.__books:
-            if book.get_title() == title and book.get_status() == "Wypozyczona":
-                if datetime.strptime(book.get_borrow_history()[-1][1], "%Y-%m-%d %H:%M:%S") > datetime.strptime(date, "%Y-%m-%d %H:%M:%S"):
+            if book.get_tytul() == tytul and book.get_status() == "Wypozyczona":
+                if datetime.strptime(book.get_borrow_history()[-1][1], "%d-%m-%Y %H:%M:%S") > datetime.\
+                            strptime(date, "%d-%m-%Y %H:%M:%S"):
                     print(f" Data oddania nie moze być wcześniejsza niz data wypozyczenia.")
                     return
                 book.set_status("W bibliotece")
@@ -247,9 +250,10 @@ class Library:
     def __save_books_to_file(self):
         with open('biblioteka.csv', 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(["ID", "Tytul", "Author", "Rok wydania", "Status"])
+            writer.writerow(["ID", "Tytul", "autor", "Rok wydania", "Status"])
             for book in self.__books:
-                writer.writerow([book.get_id(), book.get_title(), book.get_author(), book.get_year(), book.get_status()])
+                writer.writerow([book.get_id(), book.get_tytul(), book.get_autor(), book.get_rok_wydania(),
+                                 book.get_status()])
 
     def __save_history_to_file(self):
         with open('historia.csv', 'w', newline='') as file:
@@ -257,7 +261,8 @@ class Library:
             writer.writerow(["ID ksiazki", "Numer czytacza", "Data wypozyczenia", "Data oddania"])
             for book in self.__books:
                 for history in book.get_borrow_history():
-                    writer.writerow([book.get_id(), history[0], history[1], history[2] if len(history) > 2 else "Nie zwrócono jeszcze"])
+                    writer.writerow([book.get_id(), history[0],
+                                     history[1], history[2] if len(history) > 2 else "Nie zwrócono jeszcze"])
 
     def __save_readers_to_file(self):
         with open('czytacze.csv', 'w', newline='') as file:
@@ -266,19 +271,19 @@ class Library:
             for reader in self.__readers:
                 writer.writerow([reader.get_id(), reader.get_name(), reader.get_surname(), reader.get_books_count()])
 
-    def book_history(self, title):
+    def book_history(self, tytul):
         for book in self.__books:
-            if book.get_title() == title:
+            if book.get_tytul() == tytul:
                 if book.get_borrow_history():
-                    print(f"Historia wypozyczeń ksiazki {title}:")
+                    print(f"Historia wypozyczeń ksiazki {tytul}:")
                     for history in book.get_borrow_history():
-                        print(f"Czytacz ID: {history[0]}, Data wypozyczenia: {history[1]}, Data zwrócenia: {history[2] if len(history) > 2 else 'Nie zwrócono jeszcze'}")
+                        print(f"Czytacz ID: {history[0]}, Data wypozyczenia: {history[1]}, Data zwrócenia:"
+                              f" {history[2] if len(history) > 2 else 'Nie zwrócono jeszcze'}")
                 else:
-                    print(f"Ksiazka {title} nie byla jeszcze wypozyczona.")
+                    print(f"Ksiazka {tytul} nie byla jeszcze wypozyczona.")
                 self.__save_history_to_file()  # add this line to save the history to file
                 return
-        print(f" Nie ma ksiazki o tytule {title}.")
-
+        print(f" Nie ma ksiazki o tytule {tytul}.")
 
     def __load_books_from_file(self):
         try:
@@ -286,11 +291,10 @@ class Library:
                 reader = csv.reader(file)
                 next(reader)  # Pomijamy naglówek
                 for row in reader:
-                    book_id, title, author, year, status = row
-                    self.__books.append(Book(int(book_id), title, author, int(year), status))
+                    id_ksiazki, tytul, autor, rok_wydania, status = row
+                    self.__books.append(Book(int(id_ksiazki), tytul, autor, int(rok_wydania), status))
         except FileNotFoundError:
-            print(f" Brak pliku biblioteka.csv. Utworzono nowa listę ksiazek.")
-
+            print(f" Brak pliku biblioteka.csv")
 
     def __load_history_from_file(self):
         try:
@@ -298,10 +302,10 @@ class Library:
                 reader = csv.reader(file)
                 next(reader)  # Pomijamy naglówek
                 for row in reader:
-                    book_id, reader_id, borrow_date, return_date = row
+                    id_ksiazki, reader_id, borrow_date, return_date = row
                     try:
                         for book in self.__books:
-                            if book.get_id() == int(book_id):
+                            if book.get_id() == int(id_ksiazki):
                                 if return_date == "Nie zwrócono jeszcze":
                                     book.add_to_borrow_history(int(reader_id), borrow_date)
                                 else:
@@ -310,7 +314,7 @@ class Library:
                     except ValueError:
                         print(f" W historii znaleziono nieprawidlowe ID czytelnika: {reader_id}")
         except FileNotFoundError:
-            print(f" Brak pliku historia.csv. Utworzono nowa listę historii wypozyczeń.")
+            print(f" Brak pliku historia.csv")
 
     def __load_readers_from_file(self):
         try:
@@ -321,59 +325,66 @@ class Library:
                     reader_id, name, surname, books_count = row
                     self.__readers.append(Reader(int(reader_id), name, surname, int(books_count)))
         except FileNotFoundError:
-            print(f" Brak pliku czytacze.csv. Utworzono nowa listę czytelników.")
+            print(f" Brak pliku czytacze.csv")
 
 
 def menu():
     library = Library()
 
     while True:
-        print(f"MENU")
+        print(f" MENU ")
+        print(f"******************************")
         print("1. Dodaj ksiazkę")
         print("2. Wypozycz ksiazkę")
         print("3. Zwróć ksiazkę")
         print("4. Historia ksiazki")
         print("5. Wyjdź")
+        print(f"******************************")
 
         option = input("Wybierz opcję: ")
 
         if option == "1":
-            title = input("Podaj tytul ksiazki: ")
-            author = input("Podaj autora ksiazki: ")
+            tytul = input("Podaj tytul ksiazki: ")
+            autor = input("Podaj autora ksiazki: ")
             try:
-                year = int(input("Podaj rok wydania ksiazki: "))
-                if year > datetime.now().year or not str(year).isdigit():
+                rok_wydania = int(input("Podaj rok wydania ksiazki: "))
+                if rok_wydania > datetime.now().year or not str(rok_wydania).isdigit():
                     print(f" Rok wydania nie moze być większy niz {datetime.now().year}.")
                     continue
             except:
-                print(f" Rok wydania musi być liczba.")
+                print("Rokiem wydania musi być liczba.")
                 continue
-            library.add_book(title, author, year)
+            library.add_book(tytul, autor, rok_wydania)
+
         elif option == "2":
-            title = input("Podaj tytul ksiazki do wypozyczenia: ")
+            tytul = input("Podaj tytul ksiazki do wypozyczenia: ")
             reader_id = input("Wprowadź numer ID czytelnika: ")
             if not reader_id.isdigit():
                 print(f" ID musi być liczba.")
                 continue
             reader_id = int(reader_id)
-            date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            library.lend_book(title, reader_id, date)
+            date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            library.lend_book(tytul, reader_id, date)
+
         elif option == "3":
-            title = input("Podaj tytul ksiazki do zwrócenia: ")
-            reader_id = input("Podaj numer czytelnika zwracajacego ksiazkę: ")
+            tytul = input("Podaj tytul lub ID ksiazki do zwrócenia: ")
+            reader_id = input("Podaj numer lub ID czytelnika zwracajacego ksiazkę: ")
             if not reader_id.isdigit():
                 print(f" ID musi być liczba.")
                 continue
             reader_id = int(reader_id)
-            date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            library.return_book(title, reader_id, date)
+            date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            library.return_book(tytul, reader_id, date)
+
         elif option == "4":
-            title = input("Podaj tytul ksiazki, której historię chcesz sprawdzić: ")
-            library.book_history(title)
+            tytul = input("Podaj tytul ksiazki, której historię chcesz sprawdzić: ")
+            library.book_history(tytul)
+
         elif option == "5":
             break
         else:
-            print(f" Nieprawidlowa opcja. Spróbuj ponownie.")
+            print(f" Nieprawidlowa opcja. Sprobuj ponownie.")
+
 
 if __name__ == "__main__":
     SanityCheck().check_files()

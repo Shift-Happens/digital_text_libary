@@ -60,6 +60,12 @@ class Czytelnik:
         self.nazwisko = nazwisko
         self.ilosc_ksiazek = int(ilosc_ksiazek)
 
+    def dodaj_ksiazke(self):
+        self.ilosc_ksiazek += 1
+
+    def odejmij_ksiazke(self):
+        self.ilosc_ksiazek -= 1
+
 
 class Biblioteka:
     def __init__(self):

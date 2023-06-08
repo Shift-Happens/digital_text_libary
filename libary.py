@@ -1,17 +1,20 @@
 import csv
-from datetime import datetime
-from unidecode import unidecode
-import re
+import random
+
+
+# from datetime import datetime
+# from unidecode import unidecode
+# import re
 
 
 class SanityCheck:
     def __init__(self):
-        self.check_files("biblioteka.csv", "czytacze.csv", "historia.csv")
+        self.check_files()
 
     @staticmethod
-    def check_files(*args):
+    def check_files():
         try:
-            with open("biblioteka.csv", "r") as books_file:
+            with open("biblioteka.csv", "r"):
                 pass
         except FileNotFoundError:
             with open("biblioteka.csv", "w", newline="") as books_file:
@@ -19,7 +22,7 @@ class SanityCheck:
                 books_writer.writerow(["ID", "Tytul", "autor", "Rok wydania", "Status"])
 
         try:
-            with open("czytacze.csv", "r") as readers_file:
+            with open("czytacze.csv", "r"):
                 pass
         except FileNotFoundError:
             with open("czytacze.csv", "w", newline="") as readers_file:
@@ -27,366 +30,160 @@ class SanityCheck:
                 readers_writer.writerow(["Numer czytacza", "Imie", "Nazwisko", "Ilosc ksiazek"])
 
         try:
-            with open("historia.csv", "r") as history_file:
+            with open("historia.csv", "r"):
                 pass
         except FileNotFoundError:
             with open("historia.csv", "w", newline="") as history_file:
                 history_writer = csv.writer(history_file, delimiter=",")
                 history_writer.writerow(["ID", "Numer czytacza", "Czy udana", "Data wypozyczenia", "Data oddania"])
-            # trzeba zaimplementowac te parametry do funkcji lend_book i return_book, dodac je do funkcji
-            # add_to_borrow_history w klasie Book, oraz dodac je do funkcji __load_history_from_file w klasie Library
-            # wtedy bedzie mozna zapisywac historie wypozyczen i oddan do pliku
-            # historia.csv i odczytywac z niego historie wypozyczen i oddan przy uruchomieniu programu
 
 
-class Book:
-    def __init__(self, id_ksiazki, tytul, autor, rok_wydania, status):
-        self.__id = id_ksiazki
-        self.__tytul = tytul
-        self.__autor = autor
-        self.__rok_wydania = int(rok_wydania)
-        self.__status = status
-        self.__borrow_history = []
-
-    def get_id(self):
-        return self.__id
-
-    def get_tytul(self):
-        return self.__tytul
-
-    def get_autor(self):
-        return self.__autor
-
-    def get_rok_wydania(self):
-        return self.__rok_wydania
-
-    def get_status(self):
-        return self.__status
-
-    def set_status(self, status):
-        self.__status = status
-
-    def add_to_borrow_history(self, reader_id, borrow_date, return_date=None):
-        if return_date is None:
-            self.__borrow_history.append((reader_id, borrow_date))
-        else:
-            self.__borrow_history.append((reader_id, borrow_date, return_date))
-
-    def get_borrow_history(self):
-        return self.__borrow_history
+STATUS_KSIAZKI_W_BIBLIOTECE = "W bibliotece"
 
 
-class Reader:
-    def __init__(self, reader_id, name, surname, books_count):
-        self.__id = reader_id
-        self.__name = name
-        self.__surname = surname
-        self.__books_count = int(books_count)
-        self.__borrowed_books = []
+class Ksiazka:
+    def __init__(self, id_ksiazki, tytul, autor, rok_wydania_ksiazki, status):
+        self.id = int(id_ksiazki)
+        self.tytul = tytul
+        self.autor = autor
+        self.rok_wydania = int(rok_wydania_ksiazki)
+        self.status = status
 
-    def get_id(self):
-        return self.__id
-
-    def get_name(self):
-        return self.__name
-
-    def get_surname(self):
-        return self.__surname
-
-    def get_books_count(self):
-        return self.__books_count
-
-    def get_borrowed_books(self):
-        return self.__borrowed_books
-
-    def increase_books_count(self):
-        self.__books_count += 1
-
-    def decrease_books_count(self):
-        self.__books_count -= 1
-
-    def add_borrowed_book(self, tytul):
-        self.__borrowed_books.append(tytul)
-
-    def remove_borrowed_book(self, tytul):
-        self.__borrowed_books.remove(tytul)
+    def czy_jest_dostepna(self):
+        return self.status == STATUS_KSIAZKI_W_BIBLIOTECE
 
 
-class Library:
+class Czytelnik:
+    def __init__(self, numer_czytelnika, imie, nazwisko, ilosc_ksiazek):
+        self.numer_czytelnika = int(numer_czytelnika)
+        self.imie = imie
+        self.nazwisko = nazwisko
+        self.ilosc_ksiazek = int(ilosc_ksiazek)
+
+
+class Biblioteka:
     def __init__(self):
-        self.__books = []
-        self.__readers = []
-        self.__load_books_from_file()
-        self.__load_readers_from_file()
-        self.__load_history_from_file()
+        self.cytaty = None
+        self.ksiazki = []
+        self.czytelnicy = []
+        self.historia = []
 
-    def __is_unique_reader(self, reader_id, name, surname):
-        for reader in self.__readers:
-            if reader.get_id() == reader_id or (reader.get_name() == name and reader.get_surname() == surname):
-                return False
-        return True
+    def wybor_operacji(self):
+        # trzeba zrobic funkcje ktra zaladuje pliki i bedzie na nich operowac
+        # zostanie wywoana tutaj przed odpaleniem menu  i po zakonczeniu programu
+        # do menu uyje petli while True ze slownikiem wyboru opcji
+        self.text_menu()  # wyswietla menu - mozna latwo dodac nowe opcje bez ingerencji w kod
+        wybor = self.weryfikacja_inputu_liczba("Wybierz opcje: ")
+        while True:
+            menu = {
+                1: self.__dodaj_ksiazke,
+                2: self.__wypozycz_ksiazke,
+                3: self.__oddaj_ksiazke,
+                4: self.__sprawdz_historie_ksiazki,
+                5: self.__zakoncz_program
+            }
 
-    def __is_unique_book(self, tytul, autor):
-        for book in self.__books:
-            if book.get_tytul() == tytul and book.get_autor() == autor:
-                return False
-        return True
-
-    def write_error_to_history(self, error):
-        with open("historia.csv", "a", newline="") as history_file:
-            history_writer = csv.writer(history_file, delimiter=",")
-            history_writer.writerow([datetime.now(), error])
-
-    def add_book(self, tytul, autor, rok_wydania):
-        if not self.__is_unique_book(tytul, autor):
-            print(f" Ksiazka juz istnieje.")
-            return
-        id_ksiazki = len(self.__books) + 1
-        tytul = unidecode(tytul)  # Usuń polskie znaki
-        autor = unidecode(autor)  # Usuń polskie znaki
-        if not re.match(r'^[a-zA-Z\s]+$', autor):
-            print(f" Autor moze zawierac tylko litery i spacje.")
-            return
-        if not re.match(r'^\d+$', str(rok_wydania)):
-            print(f" Rok musi być liczba.")
-            return
-        new_book = Book(id_ksiazki, tytul, autor, rok_wydania, "W bibliotece")
-        self.__books.append(new_book)
-        self.__save_books_to_file()
-        print(f"Ksiazka dodana do biblioteki.")
-
-    def lend_book(self, tytul, reader_id, date):
-        reader_id = int(reader_id)
-        try:
-            datetime.strptime(date, "%d-%m-%Y %H:%M:%S")
-        except ValueError:
-            print(f" Data musi być w formacie YYYY-MM-DD HH:MM:SS.")
-            return
-        reader_found = False
-        for reader in self.__readers:
-            if reader.get_id() == reader_id:
-                if len(reader.get_borrowed_books()) >= reader.get_books_count():
-                    print(f" Czytelnik wypozyczyl juz maksymalna ilość ksiazek.")
-                    return
-                reader_found = True
+            if wybor in menu:
+                menu[wybor]()
+            else:
+                print("Opcja która została wybrana nie istnieje")
+            if wybor == 5:
                 break
 
-        if not reader_found:
-            name = None
-            surname = None
-            while not name:
-                name = input("Podaj imię czytelnika: ")
-            while not surname:
-                surname = input("Podaj nazwisko czytelnika: ")
-            self.add_reader(reader_id, name, surname)  # Utwórz nowego czytelnika, jeśli nie zostal znaleziony
+    def text_menu(self):
+        print(f"""
+Menu:
+Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
+*********************************
+1. Dodaj książkę
+2. Wypożycz książkę
+3. Oddaj książkę
+4. Sprawdź historię książki
+5. Zakończ program
+*********************************""")
 
-        book_found = False
-        for book in self.__books:
-            if book.get_tytul() == tytul:
-                if book.get_status() == "Wypozyczona":
-                    print(f" Ksiazka jest juz wypozyczona.")
-                    return
-                book_found = True
-                book.set_status("Wypozyczona")
-                book.add_to_borrow_history(reader_id, date)
-                break
+    def quote_dnia(self):
+        los = random.randint(1, 15)
+        self.cytaty = {
+            1: "Czytanie książek to najpiękniejsza zabawa, tak samo jak jedzenie kebaba.",
+            2: "Jeśli coś jest głupie, ale działa, to nie jest głupie, albo jest bardzo głupie, ale działa.",
+            3: "Można, ależ oczywiście, żw tak. Nawet trzeba",
+            4: "Nić dentystyczna jest dobra na wszystko",
+            5: "Sól do kąpieli jest przeznaczona do kąpieli, a nie do jedzenia",
+            6: "Sraken jest najlepszym smokiem",
+            7: "Fireball w DnD jest przereklamowany",
+            8: "Freddy Mercury był gejem",
+            9: "Michael Jackson robił hajsy na dzieciach",
+            10: "Hitler był dobrym malarzem",
+            11: "Tworzenie własnej dystrybucji Linuxa nie jest dobrym pomysłem",
+            12: "TechWithTim robi dobre tutoriale na YT",
+            13: "Książki w Empiku są turbo drogie",
+            14: "Evviva L'arte",
+            15: "chatGPT jest słaby więc nie użyłem go do pisania tych cytatów"
+        }
+        return self.cytaty[los]
 
-        if not book_found:
-            print(f" Ksiazka nie istnieje.")
-            return
+    # todo: napisać funkcje dodaj_ksiazke
+    def __dodaj_ksiazke(self):
+        pass
 
-        for reader in self.__readers:
-            if reader.get_id() == reader_id:
-                reader.add_borrowed_book(tytul)
-                reader.decrease_books_count()
-                break
+    # todo: napisać funkcje wypozycz_ksiazke
+    def __wypozycz_ksiazke(self):
+        pass
 
-        self.__save_books_to_file()
-        self.__save_readers_to_file()
-        self.__save_history_to_file()
-        print(f" Ksiazka wypozyczona.")
+    # todo: napisać funkcje oddaj_ksiazke
+    def __oddaj_ksiazke(self):
+        pass
 
-    def return_book(self, tytul, reader_id, date):
-        if reader_id is None or tytul is None:
-            print(f" Wszystkie dane (numer, tytul) musza być podane.")
-            return
-        if not re.match(r'^\d+$', str(reader_id)):
-            print(f" ID musi być liczba.")
-            return
-        reader_id = int(reader_id)
+    # todo: napisać funkcje sprawdz_historie_ksiazki
+    def __sprawdz_historie_ksiazki(self):
+        pass
 
-        for reader in self.__readers:
-            if reader.get_id() == reader_id:
-                if tytul in reader.get_borrowed_books():
-                    reader.remove_borrowed_book(tytul)
-                    reader.increase_books_count()
-                    print(reader.get_books_count())
-                else:
-                    print(f" Czytelnik nie ma wypozyczonej ksiazki o tytule {tytul}.")
-                    return
+    # todo: napisać funkcje zakoncz_program
+    def __zakoncz_program(self):
+        # zapisuje wszystkie pliki i konczy program
+        pass
 
-        for book in self.__books:
-            if book.get_tytul() == tytul and book.get_status() == "Wypozyczona":
-                if datetime.strptime(book.get_borrow_history()[-1][1], "%d-%m-%Y %H:%M:%S") > datetime.\
-                            strptime(date, "%d-%m-%Y %H:%M:%S"):
-                    print(f" Data oddania nie moze być wcześniejsza niz data wypozyczenia.")
-                    return
-                book.set_status("W bibliotece")
-                book.get_borrow_history()[-1] = book.get_borrow_history()[-1] + (date,)
-                self.__save_readers_to_file()
-                self.__save_books_to_file()
-                self.__save_history_to_file()
-                print(f" Ksiazka oddana.")
-                return
-
-        print(f" Nie ma takiej ksiazki w bibliotece.")
-
-    def add_reader(self, reader_id, name, surname):
-        name = unidecode(name)  # Usuń polskie znaki
-        surname = unidecode(surname)  # Usuń polskie znaki
-        new_reader = Reader(reader_id, name, surname, 0)
-        self.__readers.append(new_reader)
-        self.__save_readers_to_file()
-
-    def __save_books_to_file(self):
-        with open('biblioteka.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(["ID", "Tytul", "autor", "Rok wydania", "Status"])
-            for book in self.__books:
-                writer.writerow([book.get_id(), book.get_tytul(), book.get_autor(), book.get_rok_wydania(),
-                                 book.get_status()])
-
-    def __save_history_to_file(self):
-        with open('historia.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(["ID ksiazki", "Numer czytacza", "Data wypozyczenia", "Data oddania"])
-            for book in self.__books:
-                for history in book.get_borrow_history():
-                    writer.writerow([book.get_id(), history[0],
-                                     history[1], history[2] if len(history) > 2 else "Nie zwrocono jeszcze"])
-
-    def __save_readers_to_file(self):
-        with open('czytacze.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(["Numer czytacza", "Imie", "Nazwisko", "Ilosc ksiazek"])
-            for reader in self.__readers:
-                writer.writerow([reader.get_id(), reader.get_name(), reader.get_surname(), reader.get_books_count()])
-
-    def book_history(self, tytul):
-        for book in self.__books:
-            if book.get_tytul() == tytul:
-                if book.get_borrow_history():
-                    print(f"Historia wypozyczeń ksiazki {tytul}:")
-                    for history in book.get_borrow_history():
-                        print(f"Czytacz ID: {history[0]}, Data wypozyczenia: {history[1]}, Data zwrocenia:"
-                              f" {history[2] if len(history) > 2 else 'Nie zwrocono jeszcze'}")
-                else:
-                    print(f"Ksiazka {tytul} nie byla jeszcze wypozyczona.")
-                self.__save_history_to_file()  # add this line to save the history to file
-                return
-        print(f" Nie ma ksiazki o tytule {tytul}.")
-
-    def __load_books_from_file(self):
-        try:
-            with open('biblioteka.csv', 'r') as file:
-                reader = csv.reader(file)
-                next(reader)  # Pomijamy naglówek
-                for row in reader:
-                    id_ksiazki, tytul, autor, rok_wydania, status = row
-                    self.__books.append(Book(int(id_ksiazki), tytul, autor, int(rok_wydania), status))
-        except FileNotFoundError:
-            print(f" Brak pliku biblioteka.csv")
-
-    def __load_history_from_file(self):
-        try:
-            with open('historia.csv', 'r') as file:
-                reader = csv.reader(file)
-                next(reader)  # Pomijamy naglówek
-                for row in reader:
-                    id_ksiazki, reader_id, borrow_date, return_date = row
-                    try:
-                        for book in self.__books:
-                            if book.get_id() == int(id_ksiazki):
-                                if return_date == "Nie zwrocono jeszcze":
-                                    book.add_to_borrow_history(int(reader_id), borrow_date)
-                                else:
-                                    book.add_to_borrow_history(int(reader_id), borrow_date, return_date)
-                                break
-                    except ValueError:
-                        print(f" W historii znaleziono nieprawidlowe ID czytelnika: {reader_id}")
-        except FileNotFoundError:
-            print(f" Brak pliku historia.csv")
-
-    def __load_readers_from_file(self):
-        try:
-            with open('czytacze.csv', 'r') as file:
-                reader = csv.reader(file)
-                next(reader)  # Pomijamy naglówek
-                for row in reader:
-                    reader_id, name, surname, books_count = row
-                    self.__readers.append(Reader(int(reader_id), name, surname, int(books_count)))
-        except FileNotFoundError:
-            print(f" Brak pliku czytacze.csv")
-
-
-def menu():
-    library = Library()
-
-    while True:
-        print(f" MENU ")
-        print(f"******************************")
-        print("1. Dodaj ksiazkę")
-        print("2. Wypozycz ksiazkę")
-        print("3. Zwróć ksiazkę")
-        print("4. Historia ksiazki")
-        print("5. Wyjdź")
-        print(f"******************************")
-
-        option = input("Wybierz opcję: ")
-
-        if option == "1":
-            tytul = input("Podaj tytul ksiazki: ")
-            autor = input("Podaj autora ksiazki: ")
+    @staticmethod
+    def weryfikacja_inputu_liczba(tekst):
+        while True:
             try:
-                rok_wydania = int(input("Podaj rok wydania ksiazki: "))
-                if rok_wydania > datetime.now().year or not str(rok_wydania).isdigit():
-                    print(f" Rok wydania nie moze być większy niz {datetime.now().year}.")
-                    continue
-            except:
-                print("Rokiem wydania musi być liczba.")
-                continue
-            library.add_book(tytul, autor, rok_wydania)
+                wybor = int(input(tekst))
+                return wybor
+            except ValueError:
+                print("Wprowadź liczbę!")
 
-        elif option == "2":
-            tytul = input("Podaj tytul ksiazki do wypozyczenia: ")
-            reader_id = input("Wprowadz numer ID czytelnika: ")
-            if not reader_id.isdigit():
-                print(f" ID musi byc liczba.")
-                continue
-            reader_id = int(reader_id)
-            date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-            library.lend_book(tytul, reader_id, date)
+    # todo: dodac weryfikacje inputu
+    @staticmethod
+    def weryfikacja_inputu_tekst(tekst):
+        while True:
+            try:
+                wybor = input(tekst)
+                return wybor
+            except ValueError:
+                print("Wprowadź tekst!")
 
-        elif option == "3":
-            tytul = input("Podaj tytul lub ID ksiazki do zwrócenia: ")
-            reader_id = input("Podaj numer lub ID czytelnika zwracajacego ksiazkę: ")
-            if not reader_id.isdigit():
-                print(f" ID musi być liczba.")
-                continue
-            reader_id = int(reader_id)
-            date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-            library.return_book(tytul, reader_id, date)
 
-        elif option == "4":
-            tytul = input("Podaj tytul ksiazki, ktorej historie chcesz sprawdzic: ")
-            library.book_history(tytul)
+# todo napisać klase która doda eventy do historii
+class Wydarzenia:
+    def __init__(self):
+        self.id = 0
+        self.numer_czytelnika = 0
+        self.czy_udana = False
+        self.data_wypozyczenia = None
+        self.data_oddania = None
 
-        elif option == "5":
-            break
-        else:
-            print(f" Nieprawidlowa opcja. Sprobuj ponownie.")
+    # funkcja która będzie zwracać stringa żeby można było go łatwo zaimplemetować w różnych miejscach
+    def __str__(self):
+        return f"{self.id}, Numer czytacza: {self.numer_czytelnika}, Czy udana:{self.czy_udana}, " \
+               f"Data Wypozyczenia{self.data_wypozyczenia}, Data oddania: {self.data_oddania} "
+
+
+def main():
+    biblioteka = Biblioteka()
+    biblioteka.wybor_operacji()
 
 
 if __name__ == "__main__":
     SanityCheck().check_files()
-    menu()
+    main()

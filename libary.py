@@ -1,5 +1,6 @@
 import csv
 import random
+import os
 
 
 # from datetime import datetime
@@ -52,6 +53,10 @@ class Ksiazka:
     def czy_jest_dostepna(self):
         return self.status == STATUS_KSIAZKI_W_BIBLIOTECE
 
+    # todo: poprawić funkcję tak aby zmienne się kleiły i miały sens
+    def znajdz_ksiazke(self, oznaczenie_ksiazki, czy_wypozycza):
+        pass
+
 
 class Czytelnik:
     def __init__(self, numer_czytelnika, imie, nazwisko, ilosc_ksiazek):
@@ -65,6 +70,11 @@ class Czytelnik:
 
     def odejmij_ksiazke(self):
         self.ilosc_ksiazek -= 1
+
+
+BIBLIOTEKA_PLIK_CSV = "biblioteka.csv"
+CZYTELNICY_PLIK_CSV = "czytacze.csv"
+HISTORIA_PLIK_CSV = "historia.csv"
 
 
 class Biblioteka:
@@ -113,7 +123,7 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
         self.cytaty = {
             1: "Czytanie książek to najpiękniejsza zabawa, tak samo jak jedzenie kebaba.",
             2: "Jeśli coś jest głupie, ale działa, to nie jest głupie, albo jest bardzo głupie, ale działa.",
-            3: "Można, ależ oczywiście, żw tak. Nawet trzeba",
+            3: "Można, ależ oczywiście, że tak. Nawet trzeba",
             4: "Nić dentystyczna jest dobra na wszystko",
             5: "Sól do kąpieli jest przeznaczona do kąpieli, a nie do jedzenia",
             6: "Sraken jest najlepszym smokiem",
@@ -129,15 +139,20 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
         }
         return self.cytaty[los]
 
-    # todo: napisać funkcje dodaj_ksiazke
     def __dodaj_ksiazke(self):
-        pass
+        tytul = self.weryfikacja_czy_polskie_znaki("Podaj tytuł: ")
+        autor = self.weryfikacja_czy_polskie_znaki("Podaj autora: ")
+        rok = self.weryfikacja_czy_liczba("Podaj rok wydania: ")
+        id_ksiazki = len(self.ksiazki) + 1
+        ksiazka = Ksiazka(id_ksiazki, tytul, autor, rok, STATUS_KSIAZKI_W_BIBLIOTECE)
+        self.ksiazki.append(ksiazka)
+        print("Dodano ksiazke do biblioteki.")
 
     # todo: napisać funkcje wypozycz_ksiazke
     def __wypozycz_ksiazke(self):
         pass
 
-    # todo: napisać funkcje oddaj_ksiazke
+    # todo: napisać funkcje oddaj_ksiazke || do poprawy , sposb przerywania jest zly
     def __oddaj_ksiazke(self):
         pass
 
@@ -150,11 +165,11 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
     def __wydarzenie_do_historii():
         pass
 
-        def sukces():
-            pass
-
-        def porazka():
-            pass
+        # def sukces():
+        #     pass
+        #
+        # def porazka():
+        #     pass
 
     # todo: napisać funkcje zakoncz_program
     def __zakoncz_program(self):
@@ -182,31 +197,109 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
                 else:
                     return wyrazenie
 
-    # todo: napisać funkcje która sprawdzi czy wartość jest pusta i zwróci None albo wartość
-    def wartosc_pusta(self, wartosc):
-        pass
+    @staticmethod
+    def wartosc_pusta(wartosc):
+        if wartosc == "":
+            return None
+        else:
+            return wartosc
 
-    # todo: funkcja która wprowadzi parfametry i dane do plików csv
     def zapisanie_do_pliku_csv(self):
-        pass
+        dane_plikow = [
+            {"nazwa_pliku": BIBLIOTEKA_PLIK_CSV,
+             "header": ["ID", "Tytul", "Autor", "Rok wydania", "Status"],
+             "tablica": self.ksiazki,
+             "funkcja": lambda ksiazka: [
+                 ksiazka.id,
+                 ksiazka.tytul,
+                 ksiazka.autor,
+                 ksiazka.rok_wydania,
+                 ksiazka.status, ],
+             },
+            {"nazwa_pliku": CZYTELNICY_PLIK_CSV,
+             "header": ["Numer czytacza", "Imie", "Nazwisko", "Ilosc ksiazek"],
+             "tablica": self.czytelnicy,
+             "funkcja": lambda czytacz: [
+                 czytacz.numer_czytelnika,
+                 czytacz.imie,
+                 czytacz.nazwisko,
+                 czytacz.liczba_ksiazek, ],
+             },
+            {"nazwa_pliku": HISTORIA_PLIK_CSV,
+             "header": [
+                 "ID",
+                 "Numer czytacza",
+                 "Czy udana",
+                 "Data wypozyczenia",
+                 "Data zwrotu",
+             ],
+             "tablica": self.historia,
+             "funkcja": lambda zdarzenie: [
+                 zdarzenie.id_ksiazki,
+                 zdarzenie.numer_czytelnika,
+                 zdarzenie.czy_sukces,
+                 zdarzenie.data_wypozyczenia,
+                 zdarzenie.data_oddania, ],
+             },
+        ]
 
-    # todo: funkcja która wczyta dane z plików csv
+        for dane_pliku in dane_plikow:
+            with open(dane_pliku["nazwa_pliku"], "w", newline="") as plik:
+                writer = csv.writer(plik)
+                writer.writerow(dane_pliku["header"])
+                writer.writerows(map(dane_pliku["funkcja"], dane_pliku["tablica"]))
+
     def wczytanie_z_pliku_csv(self):
         pass
+        dane_plikow = [
+            {
+                "nazwa_pliku": BIBLIOTEKA_PLIK_CSV,
+                "funkcja": lambda wiersz: Ksiazka(
+                    *[self.wartosc_pusta(val) for val in wiersz]
+                ),
+                "dodaj_do": self.ksiazki,
+                "etykieta": "ID",
+            },
+            {
+                "nazwa_pliku": CZYTELNICY_PLIK_CSV,
+                "funkcja": lambda wiersz: Czytelnik(
+                    *[self.wartosc_pusta(val) for val in wiersz]
+                ),
+                "dodaj_do": self.czytelnicy,
+                "etykieta": "Numer czytacza",
+            },
+            {
+                "nazwa_pliku": HISTORIA_PLIK_CSV,
+                "funkcja": lambda wiersz: Wydarzenia(
+                    *[self.wartosc_pusta(val) for val in wiersz]
+                ),
+                "dodaj_do": self.historia,
+                "etykieta": "ID",
+            },
+        ]
+
+        for dane_pliku in dane_plikow:
+            if os.path.exists(dane_pliku["nazwa_pliku"]):
+                with open(dane_pliku["nazwa_pliku"], "r") as file:
+                    reader = csv.reader(file)
+                    next(reader)  # Skip the header row
+                    for row in reader:
+                        if row and row[0] != dane_pliku["etykieta"]:
+                            item = dane_pliku["funkcja"](row)
+                            dane_pliku["dodaj_do"].append(item)
 
 
-# todo napisać klase która doda eventy do historii
 class Wydarzenia:
-    def __init__(self):
-        self.id = 0
-        self.numer_czytelnika = 0
-        self.czy_udana = False
-        self.data_wypozyczenia = None
-        self.data_oddania = None
+    def __init__(self, id_ksiazki, numer_czytelnika, czy_udana, data_wypozyczenia=None, data_oddania=None):
+        self.id_ksiazki = None if id_ksiazki is None else int(id_ksiazki)
+        self.numer_czytelnika = int(numer_czytelnika)
+        self.czy_sie_udalo = czy_udana
+        self.data_wypozyczenia = data_wypozyczenia
+        self.data_oddania = data_oddania
 
     # todo: funkcja która będzie zwracać stringa żeby można było go łatwo zaimplemetować w różnych miejscach
     def __str__(self):
-        return f"{self.id}, Numer czytacza: {self.numer_czytelnika}, Czy udana:{self.czy_udana}, " \
+        return f"{self.id_ksiazki}, Numer czytacza: {self.numer_czytelnika}, Czy udana:{self.czy_sie_udalo}, " \
                f"Data Wypozyczenia{self.data_wypozyczenia}, Data oddania: {self.data_oddania} "
 
 

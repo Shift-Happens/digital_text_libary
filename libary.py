@@ -42,12 +42,12 @@ HISTORIA_PLIK_CSV = "historia.csv"
 
 
 class Ksiazka:
-    def __init__(self, id_ksiazki, tytul, autor, rok_wydania_ksiazki, status):
+    def __init__(self, id_ksiazki, tytul, autor, rok_wydania, status):
         self.numer_czytelnika = None
         self.id = int(id_ksiazki)
         self.tytul = tytul
         self.autor = autor
-        self.rok_wydania = int(rok_wydania_ksiazki)
+        self.rok_wydania = int(rok_wydania)
         self.status = status
 
     def czy_jest_dostepna(self):
@@ -55,7 +55,7 @@ class Ksiazka:
 
     def oznacz_jako_dostepna(self):
         self.status = STATUS_KSIAZKI_W_BIBLIOTECE
-        self.numer_czytelnika = None
+        # self.numer_czytelnika = None
 
     def oznacz_jako_wypozyczona(self, numer_czytelnika):
         self.status = "Wypozyczona"
@@ -76,12 +76,9 @@ class Czytelnik:
         self.ilosc_ksiazek -= 1
 
 
-class TyTylkoTuIstniejeszZebyMocPrzerwacPetle:
+class TyTylkoTuIstniejeszZebyMocPrzerwacPetle(Exception):
     def __init__(self, message):
         self.message = message
-    pass
-
-    message = "TyTylkoTuIstniejeszZebyMocPrzerwacPetle zadziałalo"
 
 
 class Biblioteka:
@@ -97,13 +94,13 @@ class Biblioteka:
             self.text_menu()
             wybor = self.weryfikacja_czy_liczba("Wybierz opcje: ")
             if wybor == 1:
-                self.__dodaj_ksiazke()
+                self.dodaj_ksiazke()
             elif wybor == 2:
-                self.__wypozycz_ksiazke()
+                self.wypozycz_ksiazke()
             elif wybor == 3:
-                self.__oddaj_ksiazke()
+                self.oddaj_ksiazke()
             elif wybor == 4:
-                self.__sprawdz_historie_ksiazki()
+                self.sprawdz_historie_ksiazki()
             elif wybor == 5:
                 self.zapisanie_do_pliku_csv()
                 break
@@ -113,7 +110,7 @@ class Biblioteka:
     def text_menu(self):
         print(f"""
 Menu:
-Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
+Inspiracyny quote: {self.quote_dnia()}
 *********************************
 1. Dodaj książkę
 2. Wypożycz książkę
@@ -143,7 +140,7 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
         }
         return self.cytaty[los]
 
-    def __dodaj_ksiazke(self):
+    def dodaj_ksiazke(self):
         tytul = self.weryfikacja_czy_polskie_znaki("Podaj tytuł: ")
         autor = self.weryfikacja_czy_polskie_znaki("Podaj autora: ")
         rok = self.weryfikacja_czy_liczba("Podaj rok wydania: ")
@@ -152,64 +149,70 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
         self.ksiazki.append(ksiazka)
         print("Dodano ksiazke do biblioteki.")
 
-    def __wypozycz_ksiazke(self):
+    def wypozycz_ksiazke(self):
         while True:
             oznaczenie_ksiazki = self.weryfikacja_czy_polskie_znaki("Podaj numer indeksu lub tytuł książki: ")
             numer_czytelnika = self.weryfikacja_czy_liczba("Podaj numer czytelnika: ")
             imie = self.weryfikacja_czy_polskie_znaki("Podaj imię: ")
             nazwisko = self.weryfikacja_czy_polskie_znaki("Podaj nazwisko: ")
-            czytelnik = self.__znajdz_czytelnika(numer_czytelnika)
-            if not self.__zweryfikuj_czytelnika(numer_czytelnika, imie, nazwisko):
+            czytelnik = self.znajdz_czytelnika(numer_czytelnika)
+            if not self.zweryfikuj_czytelnika(numer_czytelnika, imie, nazwisko):
                 continue
             if not czytelnik:
                 czytelnik = Czytelnik(numer_czytelnika, imie, nazwisko, 0)
                 self.czytelnicy.append(czytelnik)
             try:
-                ksiazka = self.__znajdz_ksiazke(oznaczenie_ksiazki, True)
+                ksiazka = self.znajdz_ksiazke(oznaczenie_ksiazki, True)
                 if not ksiazka.czy_jest_dostepna():
                     print("Książka jest już wypożyczona")
-                    raise TyTylkoTuIstniejeszZebyMocPrzerwacPetle
-                data = self.__sprawdz_i_pobierz_date(ksiazka.id, True)
+                    raise TyTylkoTuIstniejeszZebyMocPrzerwacPetle("TyTylkoTuIstniejeszZebyMocPrzerwacPetle zadziałalo")
+                data = self.sprawdz_i_pobierz_date(ksiazka.id, True)
             except TyTylkoTuIstniejeszZebyMocPrzerwacPetle:
-                self.__dodaj_niepowodzenie_do_historii(czytelnik.numer_czytelnika)
+                self.dodaj_niepowodzenie_do_historii(czytelnik.numer_czytelnika)
                 break
             ksiazka.oznacz_jako_wypozyczona(czytelnik.numer_czytelnika)
             czytelnik.dodaj_ksiazke()
-            self.__dodaj_sukces_do_historii(ksiazka.id, czytelnik.numer_czytelnika, data, None)
+            self.dodaj_sukces_do_historii(ksiazka.id, czytelnik.numer_czytelnika, data, None)
             print("Wypożyczono książkę")
             break
 
-    def __oddaj_ksiazke(self):
+    def oddaj_ksiazke(self):
         while True:
             oznaczenie_ksiazki = self.weryfikacja_czy_polskie_znaki("Podaj numer indeksu lub tytuł książki: ")
+            ksiazka = self.znajdz_ksiazke(oznaczenie_ksiazki, False)
             try:
-                ksiazka = self.__znajdz_ksiazke(oznaczenie_ksiazki, False)
-                if ksiazka.numer_czytelnika is None:
-                    print("Książka nie jest wypożyczona")
-                    raise TyTylkoTuIstniejeszZebyMocPrzerwacPetle
-                data = self.__sprawdz_i_pobierz_date(ksiazka.id, False)
+                if isinstance(ksiazka, Ksiazka):
+                    if ksiazka.numer_czytelnika is None:
+                        print("Książka nie jest wypożyczona")
+                        raise TyTylkoTuIstniejeszZebyMocPrzerwacPetle(
+                            "TyTylkoTuIstniejeszZebyMocPrzerwacPetle zadziałało")
+                    data = self.sprawdz_i_pobierz_date(ksiazka.id, False)
+                else:
+                    print("Nie znaleziono książki")
+                    raise TyTylkoTuIstniejeszZebyMocPrzerwacPetle(
+                        "TyTylkoTuIstniejeszZebyMocPrzerwacPetle zadziałało")
             except TyTylkoTuIstniejeszZebyMocPrzerwacPetle:
-                self.__dodaj_niepowodzenie_do_historii(ksiazka.numer_czytelnika)
+                self.dodaj_niepowodzenie_do_historii(ksiazka.numer_czytelnika)
+                print(TyTylkoTuIstniejeszZebyMocPrzerwacPetle)
                 break
-            czytelnik = self.__znajdz_czytelnika(ksiazka.numer_czytelnika)
+            czytelnik = self.znajdz_czytelnika(ksiazka.numer_czytelnika)
             if not czytelnik:
-                print("Nie znaleziono czytacza")
+                print("Nie znaleziono czytelnika")
                 continue
-            self.__dodaj_sukces_do_historii(
-                ksiazka.id, czytelnik.numer_czytelnika, None, data
-            )
+            self.dodaj_sukces_do_historii(
+                ksiazka.id, czytelnik.numer_czytelnika, None, data)
             ksiazka.oznacz_jako_dostepna()
             czytelnik.odejmij_ksiazke()
             print("Książka została zwrócona do biblioteki")
             break
 
     # todo: napisać funkcje sprawdz_historie_ksiazki
-    def __sprawdz_historie_ksiazki(self):
+    def sprawdz_historie_ksiazki(self):
         while True:
             oznaczenie_ksiazki = self.weryfikacja_czy_polskie_znaki("Podaj numer indeksu lub tytuł książki: ")
             try:
-                ksiazka = self.__znajdz_ksiazke(oznaczenie_ksiazki, False)
-            except TyTylkoTuIstniejeszZebyMocPrzerwacPetle:
+                ksiazka = self.znajdz_ksiazke(oznaczenie_ksiazki, False)
+            except TyTylkoTuIstniejeszZebyMocPrzerwacPetle("TyTylkoTuIstniejeszZebyMocPrzerwacPetle zadziałalo"):
                 break
             czy_jest_ksiazka_w_historii = False
             for zdarzenie in self.historia:
@@ -225,31 +228,31 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
             break
 
     # todo: zmienic nazwe
-    def __dodaj_sukces_do_historii(self, id_ksiazki, numer_czytelnika, data_wypozyczenia, data_zwrotu):
+    def dodaj_sukces_do_historii(self, id_ksiazki, numer_czytelnika, data_wypozyczenia, data_oddania):
         # Sprawdź, czy istnieje zdarzenie w historii, które spełnia warunki
         for zdarzenie in self.historia:
             if zdarzenie.id_ksiazki == id_ksiazki and zdarzenie.numer_czytelnika == numer_czytelnika and \
                     zdarzenie.czy_sie_udalo == "Tak" and \
-                    (zdarzenie.data_wypozyczenia is None or zdarzenie.data_zwrotu is None):
+                    (zdarzenie.data_wypozyczenia is None or zdarzenie.data_oddania is None):
                 # Aktualizuj datę wypożyczenia, jeśli jest None
                 if zdarzenie.data_wypozyczenia is None:
                     zdarzenie.data_wypozyczenia = data_wypozyczenia
                 # Aktualizuj datę zwrotu, jeśli jest None
-                if zdarzenie.data_zwrotu is None:
-                    zdarzenie.data_zwrotu = data_zwrotu
+                if zdarzenie.data_oddania is None:
+                    zdarzenie.data_oddania = data_oddania
                 break
         else:
             # Dodaj nowe zdarzenie do historii
             self.historia.append(
-                Wydarzenia(id_ksiazki, numer_czytelnika, "Tak", data_wypozyczenia, data_zwrotu)
+                Wydarzenia(id_ksiazki, numer_czytelnika, "Tak", data_wypozyczenia, data_oddania)
             )
 
-    def __dodaj_niepowodzenie_do_historii(self, numer_czytelnika):
+    def dodaj_niepowodzenie_do_historii(self, numer_czytelnika):
         self.historia.append(
             Wydarzenia(None, numer_czytelnika, "Nie", None, None)
         )
 
-    def __waliduj_date_historia(self, data, id_ksiazki, czy_wypozycza):
+    def waliduj_date_historia(self, data, id_ksiazki, czy_wypozycza):
         ostatnia_data_wypozyczenia = None
         ostatnia_data_oddania = None
 
@@ -263,14 +266,14 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
             if zdarzenie.id_ksiazki == id_ksiazki:
                 if zdarzenie.data_wypozyczenia:
                     ostatnia_data_wypozyczenia = zdarzenie.data_wypozyczenia
-                if zdarzenie.data_zwrotu:
-                    ostatnia_data_oddania = zdarzenie.data_zwrotu
+                if zdarzenie.data_oddania:
+                    ostatnia_data_oddania = zdarzenie.data_oddania
                 break
 
         if czy_wypozycza:
             if ostatnia_data_wypozyczenia and not ostatnia_data_oddania:
                 print("Książka jest obecnie wypożyczona.")
-                raise TyTylkoTuIstniejeszZebyMocPrzerwacPetle
+                raise TyTylkoTuIstniejeszZebyMocPrzerwacPetle("TyTylkoTuIstniejeszZebyMocPrzerwacPetle zadziałalo")
 
             if ostatnia_data_oddania and data < ostatnia_data_oddania:
                 print(
@@ -280,7 +283,7 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
         else:
             if not ostatnia_data_wypozyczenia or ostatnia_data_oddania:
                 print("Nie można zwrócić książki, która nie jest wypożyczona.")
-                raise TyTylkoTuIstniejeszZebyMocPrzerwacPetle
+                raise TyTylkoTuIstniejeszZebyMocPrzerwacPetle("TyTylkoTuIstniejeszZebyMocPrzerwacPetle zadziałalo")
 
             if data < ostatnia_data_wypozyczenia:
                 print("Data oddania nie może być wcześniejsza niż data wypożyczenia.")
@@ -288,7 +291,7 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
 
         return True
 
-    def __sprawdz_date_rok_wydania(self, data, id_ksiazki):
+    def sprawdz_rok_wydania_i_date(self, data, id_ksiazki):
         ksiazka = next((k for k in self.ksiazki if k.id == id_ksiazki), None)
         if ksiazka is None:
             print("Nie znaleziono książki.")
@@ -359,7 +362,7 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
              "funkcja": lambda zdarzenie: [
                  zdarzenie.id_ksiazki,
                  zdarzenie.numer_czytelnika,
-                 zdarzenie.czy_sukces,
+                 zdarzenie.czy_sie_udalo,
                  zdarzenie.data_wypozyczenia,
                  zdarzenie.data_oddania, ],
              },
@@ -409,11 +412,11 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
                             item = dane_pliku["funkcja"](row)
                             dane_pliku["dodaj_do"].append(item)
 
-    def __znajdz_czytelnika(self, numer_czytelnika):
+    def znajdz_czytelnika(self, numer_czytelnika):
         return next(
             (czytelnik for czytelnik in self.czytelnicy if czytelnik.numer_czytelnika == numer_czytelnika), None)
 
-    def __znajdz_ksiazke(self, oznaczenie_ksiazki, czy_wypozycza):
+    def znajdz_ksiazke(self, oznaczenie_ksiazki, czy_wypozycza):
         znalezione_ksiazki = []
         for ksiazka in self.ksiazki:
             if str(ksiazka.id) == oznaczenie_ksiazki or ksiazka.tytul == oznaczenie_ksiazki:
@@ -427,10 +430,10 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
         indeks = self.weryfikacja_czy_liczba(
             "Znaleziono kilka książek o podanym tytule, proszę podać numer indeksu: "
         )
-        return self.__znajdz_ksiazke(indeks, False)
+        return self.znajdz_ksiazke(indeks, False)
 
-    def __zweryfikuj_czytelnika(self, numer_czytelnika, imie, nazwisko):
-        czytelnik = self.__znajdz_czytelnika(numer_czytelnika)
+    def zweryfikuj_czytelnika(self, numer_czytelnika, imie, nazwisko):
+        czytelnik = self.znajdz_czytelnika(numer_czytelnika)
         if czytelnik is not None:
             print("Czytelnik o podanym numerze już istnieje. Proszę podać inny numer.")
             return False
@@ -446,19 +449,19 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
                 return False
         return True
 
-    def __sprawdz_i_pobierz_date(self, id_ksiazki, czy_wypozycza):
+    def sprawdz_i_pobierz_date(self, id_ksiazki, czy_wypozycza):
         while True:
-            data = self.__pobierz_date()
-            if not self.__sprawdz_date_rok_wydania(data, id_ksiazki):
+            data = self.pobierz_date()
+            if not self.sprawdz_rok_wydania_i_date(data, id_ksiazki):
                 continue
             try:
-                if not self.__waliduj_date_historia(data, id_ksiazki, czy_wypozycza):
+                if not self.waliduj_date_historia(data, id_ksiazki, czy_wypozycza):
                     continue
             except TyTylkoTuIstniejeszZebyMocPrzerwacPetle:
                 break
             return data
 
-    def __pobierz_date(self):
+    def pobierz_date(self):
         while True:
             data_str = self.weryfikacja_czy_polskie_znaki("Podaj datę (dd/mm/rrrr): ")
             try:
@@ -469,10 +472,10 @@ Inspiracyny quote instancji wczytania menu: {self.quote_dnia()}
 
 
 class Wydarzenia:
-    def __init__(self, id_ksiazki, numer_czytelnika, czy_udana, data_wypozyczenia=None, data_oddania=None):
+    def __init__(self, id_ksiazki, numer_czytelnika, czy_sie_udalo, data_wypozyczenia=None, data_oddania=None):
         self.id_ksiazki = None if id_ksiazki is None else int(id_ksiazki)
         self.numer_czytelnika = int(numer_czytelnika)
-        self.czy_sie_udalo = czy_udana
+        self.czy_sie_udalo = czy_sie_udalo
         self.data_wypozyczenia = data_wypozyczenia
         self.data_oddania = data_oddania
 
